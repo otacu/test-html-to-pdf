@@ -111,6 +111,7 @@ public final class Html2pdfUtil {
         List<IElement> elements = HtmlConverter.convertToElements(html, props);
         PdfDocument pdf = new PdfDocument(new PdfWriter(outputStream));
         Document document = new Document(pdf, PageSize.A4, false);
+        document.setMargins(1,1,1,1);
         for (IElement element : elements) {
             // 分页符
             if (element instanceof HtmlPageBreak) {
