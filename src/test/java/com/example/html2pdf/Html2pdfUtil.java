@@ -1,5 +1,7 @@
 package com.example.html2pdf;
 
+import cn.wanghaomiao.xpath.model.JXDocument;
+import cn.wanghaomiao.xpath.model.JXNode;
 import com.gargoylesoftware.htmlunit.*;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.itextpdf.html2pdf.ConverterProperties;
@@ -13,10 +15,7 @@ import com.itextpdf.layout.element.IBlockElement;
 import com.itextpdf.layout.element.IElement;
 import com.itextpdf.layout.font.FontProvider;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.URL;
 import java.util.List;
 
@@ -64,6 +63,8 @@ public final class Html2pdfUtil {
         // 关闭响应流
         webResponse.cleanUp();
         String strToHtml = new String(responseContent);
+        strToHtml = strToHtml.replace("width: 500px; height: 500px;", "width: 534px; height: 801px;table-layout:fixed;");
+        strToHtml = subStringItemName(strToHtml);
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         html2pdf(strToHtml, byteArrayOutputStream);
         return byteArrayOutputStream.toByteArray();
@@ -110,8 +111,8 @@ public final class Html2pdfUtil {
         // props.setBaseUri(resources);
         List<IElement> elements = HtmlConverter.convertToElements(html, props);
         PdfDocument pdf = new PdfDocument(new PdfWriter(outputStream));
-        Document document = new Document(pdf, PageSize.A4, false);
-        document.setMargins(1,1,1,1);
+        Document document = new Document(pdf, new PageSize(408F, 612F), false);
+        document.setMargins(3,3,3,3);
         for (IElement element : elements) {
             // 分页符
             if (element instanceof HtmlPageBreak) {
@@ -132,5 +133,34 @@ public final class Html2pdfUtil {
             output.write(buffer, 0, n);
         }
         return output.toByteArray();
+    }
+
+    public static void main(String[] args)throws Exception {
+        String strToHtml="面单html字符串";
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        strToHtml = strToHtml.replace("width: 500px; height: 500px;", "width: 534px; height: 801px;table-layout:fixed;");
+        strToHtml = subStringItemName(strToHtml);
+        html2pdf(strToHtml, byteArrayOutputStream);
+        FileOutputStream fileOutputStream = new FileOutputStream("e:\\hello-world.pdf");
+        fileOutputStream.write(byteArrayOutputStream.toByteArray());
+    }
+
+    private static String subStringItemName(String html) {
+        String xpath="//body/table/tbody/tr[4]/td/table/tbody/tr/td[1]/text()";
+        JXDocument jxDocument = new JXDocument(html);
+        List<JXNode> rs = jxDocument.selN(xpath);
+        final int itemNameLengthLimit = 40;
+        for (JXNode o:rs){
+            try {
+                String itemName = o.getTextVal();
+
+                if (itemName.length() > itemNameLengthLimit){
+                    html = html.replace(o.getTextVal(), itemName.substring(0, itemNameLengthLimit)+"&nbsp;&nbsp;");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return html;
     }
 }
